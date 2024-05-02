@@ -2,57 +2,39 @@ package aws
 
 import (
 	"asset-relations/aws/awsfetcher"
-	"encoding/json"
+	"context"
 	"log/slog"
-	"os"
 )
+
+type DataStore interface {
+	StoreInstances(ctx context.Context, instances []awsfetcher.Ec2Instance) error
+	StoreVPCRelatedInstances(ctx context.Context, instances map[string][]awsfetcher.Ec2Instance) error
+}
 
 type analyzer struct {
 	logger *slog.Logger
+	store  DataStore
 }
 
-func newAnalyzer(logger *slog.Logger) analyzer {
-	return analyzer{logger: logger}
+func newAnalyzer(logger *slog.Logger, store DataStore) *analyzer {
+	return &analyzer{
+		logger: logger,
+		store:  store,
+	}
 }
 
-//func (a *analyzer) analyze(ec2Instances []awsfetcher.Ec2Instance) {
-//	data, err := json.MarshalIndent(ec2Instances, "", "  ")
-//	if err != nil {
-//		return
-//	}
-//
-//	file, errs := os.Create("debug.json")
-//	if errs != nil {
-//		a.logger.Error("Failed to create file:", errs)
-//		return
-//	}
-//	defer file.Close()
-//
-//	_, errs = file.Write(data)
-//	if errs != nil {
-//		a.logger.Error("Failed to write to file:", errs) //print the failed message
-//		return
-//	}
-//}
-
-func (a *analyzer) analyze(ec2Instances []awsfetcher.Ec2Instance) {
-	data, err := json.MarshalIndent(groupInstancesByVPC(ec2Instances), "", "  ")
+func (a *analyzer) buildRelationsAndSave(ctx context.Context, ec2Instances []awsfetcher.Ec2Instance) error {
+	err := a.store.StoreInstances(ctx, ec2Instances)
 	if err != nil {
-		return
+		return err
 	}
 
-	file, errs := os.Create("debug.json")
-	if errs != nil {
-		a.logger.Error("Failed to create file:", errs)
-		return
+	err = a.store.StoreVPCRelatedInstances(ctx, groupInstancesByVPC(ec2Instances))
+	if err != nil {
+		return err
 	}
-	defer file.Close()
 
-	_, errs = file.Write(data)
-	if errs != nil {
-		a.logger.Error("Failed to write to file:", errs) //print the failed message
-		return
-	}
+	return nil
 }
 
 func groupInstancesByVPC(instances []awsfetcher.Ec2Instance) map[string][]awsfetcher.Ec2Instance {

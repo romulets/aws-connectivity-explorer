@@ -27,10 +27,11 @@ type Ec2Instance struct {
 }
 
 type Ec2SecGroupRule struct {
-	FromPort   int32
-	ToPort     int32
-	IpProtocol string
-	IpRanges   []string
+	FromPort         int32
+	ToPort           int32
+	IpProtocol       string
+	IpRanges         []string
+	TrafficDirection string
 }
 
 type Ec2InstancesFetcher struct {
@@ -152,18 +153,26 @@ func extractSecGroup(res *ec2.DescribeSecurityGroupsOutput) []Ec2SecGroupRule {
 
 	ipPermissions := make([]Ec2SecGroupRule, 0, ec2MaxResultsPerPage)
 	for _, group := range res.SecurityGroups {
-		for _, ipPermission := range append(group.IpPermissions, group.IpPermissionsEgress...) {
-			ipPermissions = append(ipPermissions, Ec2SecGroupRule{
-				FromPort:   ptr.Deref(ipPermission.FromPort),
-				ToPort:     ptr.Deref(ipPermission.ToPort),
-				IpProtocol: ptr.Deref(ipPermission.IpProtocol),
-				IpRanges:   extractIpRanges(ipPermission.IpRanges),
-			})
+		for _, ipPermission := range append(group.IpPermissions) {
+			ipPermissions = append(ipPermissions, convertSecurityGroup(ipPermission, "INGRESS"))
+		}
+		for _, ipPermission := range append(group.IpPermissionsEgress) {
+			ipPermissions = append(ipPermissions, convertSecurityGroup(ipPermission, "EGRESS"))
 		}
 
 	}
 
 	return ipPermissions
+}
+
+func convertSecurityGroup(ipPermission ec2types.IpPermission, trafficDirection string) Ec2SecGroupRule {
+	return Ec2SecGroupRule{
+		FromPort:         ptr.Deref(ipPermission.FromPort),
+		ToPort:           ptr.Deref(ipPermission.ToPort),
+		IpProtocol:       ptr.Deref(ipPermission.IpProtocol),
+		IpRanges:         extractIpRanges(ipPermission.IpRanges),
+		TrafficDirection: trafficDirection,
+	}
 }
 
 func extractIpRanges(ranges []ec2types.IpRange) []string {

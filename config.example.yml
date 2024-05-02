@@ -1,0 +1,7 @@
+aws:
+  region: ""
+
+neo4j:
+  uri: ""
+  username: ""
+  password: ""

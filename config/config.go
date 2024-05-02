@@ -8,11 +8,18 @@ import (
 )
 
 type Config struct {
-	Aws AwsConfig `yaml:"aws"`
+	Aws   AwsConfig   `yaml:"aws"`
+	Neo4j Neo4jConfig `neo4j`
 }
 
 type AwsConfig struct {
 	Region string `yaml:"region"`
+}
+
+type Neo4jConfig struct {
+	Uri      string
+	Username string
+	Password string
 }
 
 func LoadConfig(logger *slog.Logger) (*Config, error) {

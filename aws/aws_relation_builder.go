@@ -8,23 +8,34 @@ import (
 	"log/slog"
 )
 
-func BuildRelation(ctx context.Context, logger *slog.Logger, cfg *config.Config) error {
-	logger.Info("Building Relationship")
+type RelationBuilder struct {
+	logger   *slog.Logger
+	cfg      config.AwsConfig
+	analyzer *analyzer
+}
+
+func NewRelationBuilder(logger *slog.Logger, cfg config.AwsConfig, store DataStore) *RelationBuilder {
+	return &RelationBuilder{
+		logger:   logger,
+		cfg:      cfg,
+		analyzer: newAnalyzer(logger, store),
+	}
+}
+
+func (r *RelationBuilder) Build(ctx context.Context) error {
+	r.logger.Info("Building Relationship")
 	awsCfg, err := awsconfig.LoadDefaultConfig(ctx)
 	if err != nil {
 		return err
 	}
 
-	awsCfg.Region = cfg.Aws.Region
+	awsCfg.Region = r.cfg.Region
 
-	ec2F := awsfetcher.NewEc2InstanceFetcher(awsCfg, logger)
+	ec2F := awsfetcher.NewEc2InstanceFetcher(awsCfg, r.logger)
 	instances, err := ec2F.Fetch(ctx)
 	if err != nil {
 		return err
 	}
 
-	a := newAnalyzer(logger)
-	a.analyze(instances)
-
-	return nil
+	return r.analyzer.buildRelationsAndSave(ctx, instances)
 }
