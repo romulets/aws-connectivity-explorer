@@ -20,7 +20,7 @@ func main() {
 
 	logger = logger.With(slog.String("region", cfg.Aws.Region))
 
-	store, err := neo4jstore.NewNeo4jDataStore(logger, cfg.Neo4j)
+	store, err := neo4jstore.NewNeo4jDataStore(ctx, logger, cfg.Neo4j)
 	if err != nil {
 		logger.Error("Couldn't initialize Neo4j Data Store: " + err.Error())
 		return
