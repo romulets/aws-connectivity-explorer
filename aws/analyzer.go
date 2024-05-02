@@ -1,14 +1,13 @@
 package aws
 
 import (
-	"asset-relations/aws/awsfetcher"
 	"context"
 	"log/slog"
 )
 
 type DataStore interface {
-	StoreInstances(ctx context.Context, instances []awsfetcher.Ec2Instance) error
-	StoreVPCRelatedInstances(ctx context.Context, instances map[string][]awsfetcher.Ec2Instance) error
+	StoreInstances(ctx context.Context, instances []Ec2Instance) error
+	StoreVPCRelatedInstances(ctx context.Context, instances map[string][]Ec2Instance) error
 }
 
 type analyzer struct {
@@ -23,7 +22,7 @@ func newAnalyzer(logger *slog.Logger, store DataStore) *analyzer {
 	}
 }
 
-func (a *analyzer) buildRelationsAndSave(ctx context.Context, ec2Instances []awsfetcher.Ec2Instance) error {
+func (a *analyzer) buildRelationsAndSave(ctx context.Context, ec2Instances []Ec2Instance) error {
 	err := a.store.StoreInstances(ctx, ec2Instances)
 	if err != nil {
 		return err
@@ -37,13 +36,13 @@ func (a *analyzer) buildRelationsAndSave(ctx context.Context, ec2Instances []aws
 	return nil
 }
 
-func groupInstancesByVPC(instances []awsfetcher.Ec2Instance) map[string][]awsfetcher.Ec2Instance {
-	grouped := make(map[string][]awsfetcher.Ec2Instance, len(instances))
+func groupInstancesByVPC(instances []Ec2Instance) map[string][]Ec2Instance {
+	grouped := make(map[string][]Ec2Instance, len(instances))
 
 	for _, inst := range instances {
 		group, exists := grouped[inst.VPC]
 		if !exists {
-			group = make([]awsfetcher.Ec2Instance, 0, len(instances))
+			group = make([]Ec2Instance, 0, len(instances))
 		}
 
 		group = append(group, inst)

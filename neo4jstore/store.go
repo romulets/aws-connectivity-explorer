@@ -2,7 +2,6 @@ package neo4jstore
 
 import (
 	"asset-relations/aws"
-	"asset-relations/aws/awsfetcher"
 	"asset-relations/config"
 	"context"
 	"fmt"
@@ -46,20 +45,26 @@ func (n *Neo4jDataStore) initDB(ctx context.Context) error {
 // Use MERGE as create or update statement
 const storeInstanceQuery = `
 	MERGE(n_POS_:Ec2Instance {id: $_POS_.id}) SET n_POS_ = {
-		id: $_POS_.id, 
+		id: 				$_POS_.id, 
+		isOpenToInternet: 	$_POS_.isOpenToInternet, 
+		hasSSHPortOpen: 	$_POS_.hasSSHPortOpen, 
+		SSHOpenToIps: 		$_POS_.SSHOpenToIps, 
 		version: COALESCE(n_POS_.version, 0) + 1
 	}
 `
 
-func (n *Neo4jDataStore) StoreInstances(ctx context.Context, instances []awsfetcher.Ec2Instance) error {
+func (n *Neo4jDataStore) StoreInstances(ctx context.Context, instances []aws.Ec2Instance) error {
 	n.logger.Info("Storing ec2 instances")
 	b := strings.Builder{}
 	params := make(map[string]any, len(instances))
 
-	for idx, instance := range instances {
+	for idx, inst := range instances {
 		pos := fmt.Sprintf("v%d", idx)
 		params[pos] = map[string]any{
-			"id": instance.Id,
+			"id":               inst.Id,
+			"isOpenToInternet": inst.IsOpenToInternet(),
+			"hasSSHPortOpen":   inst.HasSSHPortOpen(),
+			"SSHOpenToIps":     inst.GetSSHOpenToIpRanges(),
 		}
 
 		b.WriteString(strings.ReplaceAll(storeInstanceQuery, "_POS_", pos))
@@ -76,7 +81,7 @@ const storeVPCRelationQuery = `
 	FINISH
 `
 
-func (n *Neo4jDataStore) StoreVPCRelatedInstances(ctx context.Context, groupedInstances map[string][]awsfetcher.Ec2Instance) error {
+func (n *Neo4jDataStore) StoreVPCRelatedInstances(ctx context.Context, groupedInstances map[string][]aws.Ec2Instance) error {
 	n.logger.Info("Storing VPC related instances")
 
 	params := make(map[string]any, len(groupedInstances)*40)
@@ -116,7 +121,7 @@ func (n *Neo4jDataStore) StoreVPCRelatedInstances(ctx context.Context, groupedIn
 	return nil
 }
 
-func buildVPCArg(fromInst, toInst awsfetcher.Ec2Instance, vpcIdAcc, fromIdx, toIdx int) string {
+func buildVPCArg(fromInst, toInst aws.Ec2Instance, vpcIdAcc, fromIdx, toIdx int) string {
 	if fromInst.Id > toInst.Id {
 		return fmt.Sprintf("v%d_%d_%d", vpcIdAcc, fromIdx, toIdx)
 	} else {

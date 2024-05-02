@@ -1,7 +1,6 @@
 package aws
 
 import (
-	"asset-relations/aws/awsfetcher"
 	"asset-relations/config"
 	"context"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -31,7 +30,7 @@ func (r *RelationBuilder) Build(ctx context.Context) error {
 
 	awsCfg.Region = r.cfg.Region
 
-	ec2F := awsfetcher.NewEc2InstanceFetcher(awsCfg, r.logger)
+	ec2F := NewEc2InstanceFetcher(awsCfg, r.logger)
 	instances, err := ec2F.Fetch(ctx)
 	if err != nil {
 		return err

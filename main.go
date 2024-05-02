@@ -5,11 +5,15 @@ import (
 	"asset-relations/config"
 	"asset-relations/neo4jstore"
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
+	"time"
 )
 
 func main() {
+	start := time.Now()
+
 	ctx := context.Background()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	cfg, err := config.LoadConfig(logger)
@@ -34,4 +38,7 @@ func main() {
 		logger.Error("Relation Builder exited with an error: " + err.Error())
 		return
 	}
+
+	elapsed := time.Since(start)
+	logger.Info(fmt.Sprintf("Elapsed time %s", elapsed))
 }

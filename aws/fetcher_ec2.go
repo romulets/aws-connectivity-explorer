@@ -1,11 +1,11 @@
-package awsfetcher
+package aws
 
 import (
 	"asset-relations/parallel"
 	"asset-relations/ptr"
 	"context"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/aws"
+	awssdk "github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"log/slog"
@@ -14,32 +14,12 @@ import (
 var ec2MaxResultsPerPage = int32(100)
 var ec2SecurityGroupRulesMaxGoroutines = 50
 
-type Ec2Instance struct {
-	Id                 string
-	PrivateIP          string
-	PublicIP           *string
-	PublicDNS          *string
-	VPC                string
-	SecurityGroupIds   []string
-	SecurityGroupRules []Ec2SecGroupRule
-	PrivateDNS         string
-	SSHKeyPairName     *string
-}
-
-type Ec2SecGroupRule struct {
-	FromPort         int32
-	ToPort           int32
-	IpProtocol       string
-	IpRanges         []string
-	TrafficDirection string
-}
-
 type Ec2InstancesFetcher struct {
 	client *ec2.Client
 	logger *slog.Logger
 }
 
-func NewEc2InstanceFetcher(awsCfg aws.Config, logger *slog.Logger) Ec2InstancesFetcher {
+func NewEc2InstanceFetcher(awsCfg awssdk.Config, logger *slog.Logger) Ec2InstancesFetcher {
 	return Ec2InstancesFetcher{
 		client: ec2.NewFromConfig(awsCfg),
 		logger: logger,
@@ -154,10 +134,10 @@ func extractSecGroup(res *ec2.DescribeSecurityGroupsOutput) []Ec2SecGroupRule {
 	ipPermissions := make([]Ec2SecGroupRule, 0, ec2MaxResultsPerPage)
 	for _, group := range res.SecurityGroups {
 		for _, ipPermission := range append(group.IpPermissions) {
-			ipPermissions = append(ipPermissions, convertSecurityGroup(ipPermission, "INGRESS"))
+			ipPermissions = append(ipPermissions, convertSecurityGroup(ipPermission, trafficDirectionIngress))
 		}
 		for _, ipPermission := range append(group.IpPermissionsEgress) {
-			ipPermissions = append(ipPermissions, convertSecurityGroup(ipPermission, "EGRESS"))
+			ipPermissions = append(ipPermissions, convertSecurityGroup(ipPermission, trafficDirectionEgress))
 		}
 
 	}
@@ -165,7 +145,7 @@ func extractSecGroup(res *ec2.DescribeSecurityGroupsOutput) []Ec2SecGroupRule {
 	return ipPermissions
 }
 
-func convertSecurityGroup(ipPermission ec2types.IpPermission, trafficDirection string) Ec2SecGroupRule {
+func convertSecurityGroup(ipPermission ec2types.IpPermission, trafficDirection trafficDirection) Ec2SecGroupRule {
 	return Ec2SecGroupRule{
 		FromPort:         ptr.Deref(ipPermission.FromPort),
 		ToPort:           ptr.Deref(ipPermission.ToPort),
