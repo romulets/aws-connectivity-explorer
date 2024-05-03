@@ -75,8 +75,8 @@ func (n *Neo4jDataStore) StoreInstances(ctx context.Context, instances []aws.Ec2
 
 // Use MERGE as create or update statement
 const storeVPCRelationQuery = `
-	MATCH (from_POS_:Ec2Instance {id: $fromId})
-	MATCH (to_POS_:Ec2Instance {id: $toId})
+	MATCH (from_POS_:Ec2Instance), (to_POS_:Ec2Instance)
+	WHERE from_POS_.id = $fromId AND to_POS_.id = $toId 
 	MERGE (from_POS_)-[r_POS_:IN_VPC {vpcId: $vpcId}]->(to_POS_) WITH r_POS_
 	FINISH
 `
