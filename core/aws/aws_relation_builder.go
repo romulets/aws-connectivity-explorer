@@ -1,7 +1,7 @@
 package aws
 
 import (
-	"asset-relations/config"
+	"asset-relations/support/config"
 	"context"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"log/slog"

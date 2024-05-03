@@ -1,12 +1,14 @@
 module asset-relations
 
-go 1.21
+go 1.22.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.26.1
 	github.com/aws/aws-sdk-go-v2/config v1.27.11
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.159.0
-	gopkg.in/yaml.v2 v2.2.8
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.160.0
+	github.com/neo4j/neo4j-go-driver/v5 v5.20.0
+	golang.org/x/sync v0.7.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -22,6 +24,4 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.28.6 // indirect
 	github.com/aws/smithy-go v1.20.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/neo4j/neo4j-go-driver/v5 v5.20.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
 )

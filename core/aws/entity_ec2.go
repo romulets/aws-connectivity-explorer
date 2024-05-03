@@ -1,7 +1,7 @@
 package aws
 
 import (
-	"asset-relations/ptr"
+	"asset-relations/support/ptr"
 	"strings"
 )
 

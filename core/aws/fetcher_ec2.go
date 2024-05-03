@@ -1,8 +1,8 @@
 package aws
 
 import (
-	"asset-relations/parallel"
-	"asset-relations/ptr"
+	"asset-relations/support/parallel"
+	"asset-relations/support/ptr"
 	"context"
 	"fmt"
 	awssdk "github.com/aws/aws-sdk-go-v2/aws"

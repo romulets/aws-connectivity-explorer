@@ -1,18 +1,17 @@
 package main
 
 import (
-	"asset-relations/aws"
-	"asset-relations/config"
-	"asset-relations/neo4jstore"
+	"asset-relations/application/controller"
+	"asset-relations/application/http"
+	"asset-relations/core/aws"
+	"asset-relations/core/neo4jstore"
+	"asset-relations/support/config"
 	"context"
-	"fmt"
 	"log/slog"
 	"os"
-	"time"
 )
 
 func main() {
-	start := time.Now()
 
 	ctx := context.Background()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
@@ -30,15 +29,11 @@ func main() {
 		return
 	}
 
-	defer store.(*neo4jstore.Neo4jDataStore).Close(ctx)
+	defer store.Close(ctx)
 
 	builder := aws.NewRelationBuilder(logger, cfg.Aws, store)
+	ec2Controller := controller.NewEc2Controller(logger, store, builder)
+	server := http.NewServer(ec2Controller, logger, cfg.Http)
 
-	if err := builder.Build(ctx); err != nil {
-		logger.Error("Relation Builder exited with an error: " + err.Error())
-		return
-	}
-
-	elapsed := time.Since(start)
-	logger.Info(fmt.Sprintf("Elapsed time %s", elapsed))
+	server.ListenAndServe()
 }

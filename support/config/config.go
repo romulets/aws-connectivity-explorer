@@ -9,7 +9,8 @@ import (
 
 type Config struct {
 	Aws   AwsConfig   `yaml:"aws"`
-	Neo4j Neo4jConfig `neo4j`
+	Neo4j Neo4jConfig `yaml:"neo4j"`
+	Http  HTTPConfig  `yaml:"http"`
 }
 
 type AwsConfig struct {
@@ -17,9 +18,13 @@ type AwsConfig struct {
 }
 
 type Neo4jConfig struct {
-	Uri      string
-	Username string
-	Password string
+	Uri      string `yaml:"uri"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
+
+type HTTPConfig struct {
+	Port string `yaml:"port"`
 }
 
 func LoadConfig(logger *slog.Logger) (*Config, error) {

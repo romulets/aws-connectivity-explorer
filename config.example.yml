@@ -1,6 +1,9 @@
 aws:
   region: ""
 
+http:
+  port: 8080
+
 neo4j:
   uri: ""
   username: ""
