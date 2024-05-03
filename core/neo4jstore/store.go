@@ -52,6 +52,9 @@ const mergeInstanceQuery = `
 		SSHOpenToIps: 		$_POS_.SSHOpenToIps,
 		hasRDPPortOpen: 	$_POS_.hasRDPPortOpen, 
 		RDPOpenToIps: 		$_POS_.RDPOpenToIps, 
+		VPCId: 				$_POS_.VPCId,
+		openIngressPorts: 	$_POS_.openIngressPorts,
+        openEgressPorts:	$_POS_.openEgressPorts,
 		version: COALESCE(n_POS_.version, 0) + 1
 	}
 `
@@ -70,6 +73,9 @@ func (n *Neo4jDataStore) StoreInstances(ctx context.Context, instances []aws.Ec2
 			"SSHOpenToIps":     inst.GetSSHOpenToIpRanges(),
 			"hasRDPPortOpen":   inst.HasRDPPortOpen(),
 			"RDPOpenToIps":     inst.GetRDPOpenToIpRanges(),
+			"VPCId":            inst.VPC,
+			"openIngressPorts": inst.GetOpenIngressPorts(),
+			"openEgressPorts":  inst.GetOpenEgressPorts(),
 		}
 
 		b.WriteString(strings.ReplaceAll(mergeInstanceQuery, "_POS_", pos))
@@ -136,19 +142,45 @@ func buildVPCArg(fromInst, toInst aws.Ec2Instance, vpcIdAcc, fromIdx, toIdx int)
 }
 
 const matchInstancesOpenToTheInternetQuery = `
-	MATCH(n:Ec2Instance) WHERE n.isOpenToInternet = true AND n.hasSSHPortOpen = true RETURN(n)
+	MATCH(n:Ec2Instance) 
+	WHERE 
+		n.isOpenToInternet = true 
+		AND n.hasSSHPortOpen = true  
+		AND n.SSHOpenToIps = '0.0.0.0/0' 
+	RETURN(n)
 `
 
 func (n *Neo4jDataStore) GetInstancesWithOpenSSH(ctx context.Context) ([]map[string]any, error) {
 	records, err := n.read(ctx, matchInstancesOpenToTheInternetQuery, nil)
-	response := make([]map[string]any, 0, len(records))
-
 	if err != nil {
 		return nil, err
 	}
 
+	return extractPropsFromNodes(records, "n"), nil
+}
+
+const matchInstancesPartiallyOpenToTheInternetQuery = `
+	MATCH(n:Ec2Instance) 
+	WHERE 
+		n.isOpenToInternet = true 
+		AND n.hasSSHPortOpen = true  
+		AND n.SSHOpenToIps <> '0.0.0.0/0' 
+	RETURN(n)
+`
+
+func (n *Neo4jDataStore) GetInstancesWithPartiallyOpenSSH(ctx context.Context) ([]map[string]any, error) {
+	records, err := n.read(ctx, matchInstancesPartiallyOpenToTheInternetQuery, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return extractPropsFromNodes(records, "n"), nil
+}
+
+func extractPropsFromNodes(records []*neo4j.Record, variableName string) []map[string]any {
+	response := make([]map[string]any, 0, len(records))
 	for _, record := range records {
-		props, exist := record.Get("n")
+		props, exist := record.Get(variableName)
 		if !exist {
 			continue
 		}
@@ -156,7 +188,7 @@ func (n *Neo4jDataStore) GetInstancesWithOpenSSH(ctx context.Context) ([]map[str
 		response = append(response, props.(dbtype.Node).Props)
 	}
 
-	return response, nil
+	return response
 }
 
 func (n *Neo4jDataStore) Close(ctx context.Context) error {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 )
 
 type Server struct {
@@ -40,7 +41,9 @@ func (s *Server) ListenAndServe() {
 }
 
 func (s *Server) getInstancesOpenSSH(writer http.ResponseWriter, req *http.Request) {
-	res := s.ec2Controller.GetInstancesSSHOpen(req.Context())
+	partial := strings.ToLower(req.URL.Query().Get("partial")) == "true"
+
+	res := s.ec2Controller.GetInstancesSSHOpen(req.Context(), partial)
 	writer.WriteHeader(res.Status)
 	s.safeWriteJson(writer, res.Content)
 }

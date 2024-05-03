@@ -24,8 +24,8 @@ func NewEc2Controller(logger *slog.Logger, store *neo4jstore.Neo4jDataStore, rel
 	}
 }
 
-func (e *Ec2Controller) GetInstancesSSHOpen(ctx context.Context) JSONResponse {
-	instances, err := e.store.GetInstancesWithOpenSSH(ctx)
+func (e *Ec2Controller) GetInstancesSSHOpen(ctx context.Context, partial bool) JSONResponse {
+	instances, err := e.getInstancesSSHOpen(ctx, partial)
 	if err != nil {
 		e.logger.Error("Couldn't get Instances open to internet: " + err.Error())
 		msg := []byte(fmt.Sprintf(`{"error":"%s"}`, err.Error()))
@@ -40,6 +40,14 @@ func (e *Ec2Controller) GetInstancesSSHOpen(ctx context.Context) JSONResponse {
 	}
 
 	return jsonRes(200, data)
+}
+
+func (e *Ec2Controller) getInstancesSSHOpen(ctx context.Context, partial bool) ([]map[string]any, error) {
+	if partial {
+		return e.store.GetInstancesWithPartiallyOpenSSH(ctx)
+	}
+
+	return e.store.GetInstancesWithOpenSSH(ctx)
 }
 
 func (e *Ec2Controller) FetchInstancesGraph(ctx context.Context) JSONResponse {
