@@ -1,4 +1,6 @@
-# aws-connectivity-explorer
+[![Go](https://github.com/romulets/aws-connectivity-explorer/actions/workflows/go.yml/badge.svg)](https://github.com/romulets/aws-connectivity-explorer/actions/workflows/go.yml)
+
+# AWS Connectivity Explorer
 Experimental project to learn about AWS Networking and Graph Databases
 
 ## Use cases
