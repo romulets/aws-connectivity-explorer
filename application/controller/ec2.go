@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 )
 
@@ -48,6 +49,34 @@ func (e *Ec2Controller) getInstancesSSHOpen(ctx context.Context, partial bool) (
 	}
 
 	return e.store.GetInstancesWithOpenSSH(ctx)
+}
+
+func (e *Ec2Controller) GetInstancesInSameVPC(ctx context.Context, instanceId string) JSONResponse {
+	if !instanceIdValid(instanceId) {
+		return jsonRes(400, []byte(`{"error": "invalid instance id"}`))
+	}
+
+	instances, err := e.store.GetInstancesInVPC(ctx, instanceId)
+	if err != nil {
+		e.logger.Error("Couldn't get Instances in the same vpc: " + err.Error())
+		msg := []byte(fmt.Sprintf(`{"error":"%s"}`, err.Error()))
+		return jsonRes(500, msg)
+	}
+
+	data, err := json.Marshal(instances)
+	if err != nil {
+		e.logger.Error("Couldn't convert Instances to json: " + err.Error())
+		msg := []byte(fmt.Sprintf(`{"error":"%s"}`, err.Error()))
+		return jsonRes(500, msg)
+	}
+
+	return jsonRes(200, data)
+}
+
+func instanceIdValid(instanceId string) bool {
+	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/resource-ids.html
+	suffix, found := strings.CutPrefix(instanceId, "i-")
+	return found && (len(suffix) == 8 || len(suffix) == 17)
 }
 
 func (e *Ec2Controller) FetchInstancesGraph(ctx context.Context) JSONResponse {

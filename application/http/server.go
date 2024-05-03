@@ -27,6 +27,7 @@ func (s *Server) ListenAndServe() {
 	router := http.NewServeMux()
 
 	router.HandleFunc("GET /ec2-instances/ssh-open-to-internet", s.getInstancesOpenSSH)
+	router.HandleFunc("GET /ec2-instances/in-vpc/{instanceId}", s.getInstancesInVPC)
 	router.HandleFunc("POST /ec2-instances/fetch-graph", s.fetchInstancesGraph)
 
 	server := http.Server{
@@ -42,8 +43,14 @@ func (s *Server) ListenAndServe() {
 
 func (s *Server) getInstancesOpenSSH(writer http.ResponseWriter, req *http.Request) {
 	partial := strings.ToLower(req.URL.Query().Get("partial")) == "true"
-
 	res := s.ec2Controller.GetInstancesSSHOpen(req.Context(), partial)
+	writer.WriteHeader(res.Status)
+	s.safeWriteJson(writer, res.Content)
+}
+
+func (s *Server) getInstancesInVPC(writer http.ResponseWriter, req *http.Request) {
+	id := req.PathValue("instanceId")
+	res := s.ec2Controller.GetInstancesInSameVPC(req.Context(), id)
 	writer.WriteHeader(res.Status)
 	s.safeWriteJson(writer, res.Content)
 }

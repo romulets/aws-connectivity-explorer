@@ -7,6 +7,7 @@ Experimental project to learn about AWS Networking and Graph Databases
 
 - Store all instances in a region and correlate by VPC id `POST /ec2-instances/fetch-graph`
 - Fetch all instances with public IP and SSH port open `GET /ec2-instances/ssh-open-to-internet`
+- Fetch all instances in the same VPC as another instance `GET /ec2-instances/in-vpc/{instanceId}`
 
 ## How to run
 

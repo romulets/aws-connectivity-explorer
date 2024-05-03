@@ -177,6 +177,22 @@ func (n *Neo4jDataStore) GetInstancesWithPartiallyOpenSSH(ctx context.Context) (
 	return extractPropsFromNodes(records, "n"), nil
 }
 
+const matchInstancesInVPCQuery = `
+	MATCH(n:Ec2Instance)-[:IN_VPC]->(o:Ec2Instance)
+	WHERE
+		n.id = $id
+	RETURN o
+`
+
+func (n *Neo4jDataStore) GetInstancesInVPC(ctx context.Context, id string) ([]map[string]any, error) {
+	records, err := n.read(ctx, matchInstancesInVPCQuery, map[string]any{"id": id})
+	if err != nil {
+		return nil, err
+	}
+
+	return extractPropsFromNodes(records, "o"), nil
+}
+
 func extractPropsFromNodes(records []*neo4j.Record, variableName string) []map[string]any {
 	response := make([]map[string]any, 0, len(records))
 	for _, record := range records {
