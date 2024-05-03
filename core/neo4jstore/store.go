@@ -89,7 +89,7 @@ const mergeVPCRelationQuery = `
 func (n *Neo4jDataStore) StoreVPCRelatedInstances(ctx context.Context, groupedInstances map[string][]aws.Ec2Instance) error {
 	n.logger.Info("Storing VPC related instances")
 
-	params := make(map[string]any, len(groupedInstances)*40)
+	queryParams := make(map[string]map[string]any, len(groupedInstances)*40)
 
 	vpcIdAcc := 0
 	for vpcId, instances := range groupedInstances {
@@ -100,20 +100,15 @@ func (n *Neo4jDataStore) StoreVPCRelatedInstances(ctx context.Context, groupedIn
 				}
 
 				pos := buildVPCArg(fromInst, toInst, vpcIdAcc, fromIdx, toIdx)
-				if _, exists := params[pos]; exists {
+				query := strings.ReplaceAll(mergeVPCRelationQuery, "_POS_", pos)
+				if _, exists := queryParams[query]; exists {
 					continue
 				}
 
-				params[pos] = map[string]any{
+				queryParams[query] = map[string]any{
 					"fromId": fromInst.Id,
 					"toId":   toInst.Id,
 					"vpcId":  vpcId,
-				}
-
-				// Writing multiple times instead of one big query because it became too slow
-				err := n.write(ctx, strings.ReplaceAll(mergeVPCRelationQuery, "_POS_", pos), params[pos].(map[string]any))
-				if err != nil {
-					return err
 				}
 			}
 		}
@@ -121,7 +116,13 @@ func (n *Neo4jDataStore) StoreVPCRelatedInstances(ctx context.Context, groupedIn
 		vpcIdAcc++
 	}
 
-	n.logger.Info(fmt.Sprintf("Created %d relationships", len(params)))
+	// Writing multiple times instead of one big query because it became too slow
+	err := n.writeMultiple(ctx, queryParams)
+	if err != nil {
+		return err
+	}
+
+	n.logger.Info(fmt.Sprintf("Created %d relationships", len(queryParams)))
 
 	return nil
 }
@@ -163,13 +164,22 @@ func (n *Neo4jDataStore) Close(ctx context.Context) error {
 }
 
 func (n *Neo4jDataStore) write(ctx context.Context, writeQuery string, params map[string]any) error {
+	return n.writeMultiple(ctx, map[string]map[string]any{
+		writeQuery: params,
+	})
+}
+
+func (n *Neo4jDataStore) writeMultiple(ctx context.Context, queryParams map[string]map[string]any) error {
 	session := n.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
 	defer session.Close(ctx)
 
 	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
-		if _, err := tx.Run(ctx, writeQuery, params); err != nil {
-			return nil, err
+		for query, params := range queryParams {
+			if _, err := tx.Run(ctx, query, params); err != nil {
+				return nil, err
+			}
 		}
+
 		return nil, nil
 	})
 
