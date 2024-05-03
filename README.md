@@ -24,3 +24,12 @@ docker run \
 ```
     go run main.go
 ```
+
+## Code Structure
+
+- `application/` holds everything related to serve HTTP requests
+- `core/` contains fetching, grouping and storage of aws assets. Why storage, you might ask. It felt
+like the core logic of this app also lives inside the database. I can be wrong of course. But for simplicity
+I followed my gut feeling. Regardless `aws` package is completely decoupled from anything else in this project.
+That is the real core.
+- `support/` things that support the application to run, like configuration, concurrency management among others
