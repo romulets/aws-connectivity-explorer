@@ -49,7 +49,9 @@ const mergeInstanceQuery = `
 		id: 				$_POS_.id, 
 		isOpenToInternet: 	$_POS_.isOpenToInternet, 
 		hasSSHPortOpen: 	$_POS_.hasSSHPortOpen, 
-		SSHOpenToIps: 		$_POS_.SSHOpenToIps, 
+		SSHOpenToIps: 		$_POS_.SSHOpenToIps,
+		hasRDPPortOpen: 	$_POS_.hasRDPPortOpen, 
+		RDPOpenToIps: 		$_POS_.RDPOpenToIps, 
 		version: COALESCE(n_POS_.version, 0) + 1
 	}
 `
@@ -66,6 +68,8 @@ func (n *Neo4jDataStore) StoreInstances(ctx context.Context, instances []aws.Ec2
 			"isOpenToInternet": inst.IsOpenToInternet(),
 			"hasSSHPortOpen":   inst.HasSSHPortOpen(),
 			"SSHOpenToIps":     inst.GetSSHOpenToIpRanges(),
+			"hasRDPPortOpen":   inst.HasRDPPortOpen(),
+			"RDPOpenToIps":     inst.GetRDPOpenToIpRanges(),
 		}
 
 		b.WriteString(strings.ReplaceAll(mergeInstanceQuery, "_POS_", pos))
@@ -134,7 +138,7 @@ const matchInstancesOpenToTheInternetQuery = `
 	MATCH(n:Ec2Instance) WHERE n.isOpenToInternet = true AND n.hasSSHPortOpen = true RETURN(n)
 `
 
-func (n *Neo4jDataStore) GetInstancesOpenToTheInternet(ctx context.Context) ([]map[string]any, error) {
+func (n *Neo4jDataStore) GetInstancesWithOpenSSH(ctx context.Context) ([]map[string]any, error) {
 	records, err := n.read(ctx, matchInstancesOpenToTheInternetQuery, nil)
 	response := make([]map[string]any, 0, len(records))
 
@@ -157,6 +161,7 @@ func (n *Neo4jDataStore) GetInstancesOpenToTheInternet(ctx context.Context) ([]m
 func (n *Neo4jDataStore) Close(ctx context.Context) error {
 	return n.driver.Close(ctx)
 }
+
 func (n *Neo4jDataStore) write(ctx context.Context, writeQuery string, params map[string]any) error {
 	session := n.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
 	defer session.Close(ctx)

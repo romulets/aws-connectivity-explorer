@@ -25,7 +25,7 @@ func NewServer(ec2Controller *controller.Ec2Controller, logger *slog.Logger, cfg
 func (s *Server) ListenAndServe() {
 	router := http.NewServeMux()
 
-	router.HandleFunc("GET /ec2-instances/open-to-internet", s.getInstancesOpenToInternet)
+	router.HandleFunc("GET /ec2-instances/ssh-open-to-internet", s.getInstancesOpenSSH)
 	router.HandleFunc("POST /ec2-instances/fetch-graph", s.fetchInstancesGraph)
 
 	server := http.Server{
@@ -39,8 +39,8 @@ func (s *Server) ListenAndServe() {
 	}
 }
 
-func (s *Server) getInstancesOpenToInternet(writer http.ResponseWriter, req *http.Request) {
-	res := s.ec2Controller.GetInstancesOpenToInternet(req.Context())
+func (s *Server) getInstancesOpenSSH(writer http.ResponseWriter, req *http.Request) {
+	res := s.ec2Controller.GetInstancesSSHOpen(req.Context())
 	writer.WriteHeader(res.Status)
 	s.safeWriteJson(writer, res.Content)
 }

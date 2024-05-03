@@ -24,8 +24,8 @@ func NewEc2Controller(logger *slog.Logger, store *neo4jstore.Neo4jDataStore, rel
 	}
 }
 
-func (e *Ec2Controller) GetInstancesOpenToInternet(ctx context.Context) JSONResponse {
-	instances, err := e.store.GetInstancesOpenToTheInternet(ctx)
+func (e *Ec2Controller) GetInstancesSSHOpen(ctx context.Context) JSONResponse {
+	instances, err := e.store.GetInstancesWithOpenSSH(ctx)
 	if err != nil {
 		e.logger.Error("Couldn't get Instances open to internet: " + err.Error())
 		msg := []byte(fmt.Sprintf(`{"error":"%s"}`, err.Error()))

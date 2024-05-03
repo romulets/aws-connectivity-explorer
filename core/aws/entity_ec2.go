@@ -20,8 +20,13 @@ type Ec2Instance struct {
 type trafficDirection string
 
 const (
-	trafficDirectionIngress = "INGRESS"
-	trafficDirectionEgress  = "EGRESS"
+	trafficDirectionIngress trafficDirection = "INGRESS"
+	trafficDirectionEgress  trafficDirection = "EGRESS"
+)
+
+const (
+	sshPort int32 = 22
+	rdpPort int32 = 3389
 )
 
 type Ec2SecGroupRule struct {
@@ -37,12 +42,12 @@ func (e *Ec2Instance) IsOpenToInternet() bool {
 }
 
 func (e *Ec2Instance) HasSSHPortOpen() bool {
-	_, isOpen := e.findSSHRule()
+	_, isOpen := e.findRuleByPort(sshPort)
 	return isOpen
 }
 
 func (e *Ec2Instance) GetSSHOpenToIpRanges() *string {
-	rule, isOpen := e.findSSHRule()
+	rule, isOpen := e.findRuleByPort(sshPort)
 	if !isOpen {
 		return nil
 	}
@@ -50,9 +55,23 @@ func (e *Ec2Instance) GetSSHOpenToIpRanges() *string {
 	return ptr.Ref(strings.Join(rule.IpRanges, ","))
 }
 
-func (e *Ec2Instance) findSSHRule() (Ec2SecGroupRule, bool) {
+func (e *Ec2Instance) HasRDPPortOpen() bool {
+	_, isOpen := e.findRuleByPort(sshPort)
+	return isOpen
+}
+
+func (e *Ec2Instance) GetRDPOpenToIpRanges() *string {
+	rule, isOpen := e.findRuleByPort(sshPort)
+	if !isOpen {
+		return nil
+	}
+
+	return ptr.Ref(strings.Join(rule.IpRanges, ","))
+}
+
+func (e *Ec2Instance) findRuleByPort(port int32) (Ec2SecGroupRule, bool) {
 	for _, rule := range e.SecurityGroupRules {
-		if rule.TrafficDirection == trafficDirectionIngress && rule.FromPort <= 22 && rule.ToPort >= 22 {
+		if rule.TrafficDirection == trafficDirectionIngress && rule.FromPort <= port && rule.ToPort >= port {
 			return rule, true
 		}
 	}
