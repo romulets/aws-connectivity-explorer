@@ -37,6 +37,18 @@ That is the real core.
 
 ## Early thoughts on how to build a tool to analyze threats and attacks
 
+TLDR;
+- Do we aim to be a free exploration tool?
+- How can we bring security speciallists knowledege?
+- There are multiple type of relationships between Assets, how do we mesh them together? Do we need to mesh them? types:
+  - Infrastructural State
+  - Instrastructural Changes
+  - Data communication
+- Infrastructural State annalysis: it's dangerous. Networking and Authentication is complex and intricate. Do we
+feel confident on stating "EC2 is not open to the internet"? What if we are wrong? I see this as deeper than a simple bug
+
+
+
 - Exploration is a very open term. Tinsae has shared this very nice tool called 
 [Cartography](https://lyft.github.io/cartography/index.html) that essentially does what I tried to do (but better
 and more complete). I find their approach interesting for us to consider. How they work is by fetching data from
