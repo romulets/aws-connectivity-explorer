@@ -48,7 +48,9 @@ TLDR;
 feel confident on stating "EC2 is not open to the internet"? What if we are wrong? I see this as deeper than a simple bug
 - Stale Assets vs Deleted Assets. How to treat them in a "Time Series" like solution? An asset that didn't show up in the
 previous iteration not necessarily means it's deleted (e.g. data source has an outage and we couldn't get that data). 
+- For complex explorations we are highly dependant on elasticsearch join capability
 
+---
 
 - Exploration is a very open term. Tinsae has shared this very nice tool called 
 [Cartography](https://lyft.github.io/cartography/index.html) that essentially does what I tried to do (but better
